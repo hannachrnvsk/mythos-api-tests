@@ -1,3 +1,6 @@
+import dotenv from 'dotenv';
+import path from 'path';
+dotenv.config({ path: path.resolve(__dirname, '.env') });
 import {
     createMythologyEntity,
     createMythologyEntityWithoutAuth,
@@ -16,8 +19,9 @@ import {
   protectedSystemEntityIds,
 } from '../support/mythology-test-data';
 import {
-  expectApiErrorBodyContract,
-  expectJsonContentType,
+    ApiErrorBody,
+    expectApiErrorBodyContract, expectHTTPError,
+    expectJsonContentType,
 } from '../support/contract-assertions';
 
 test.describe.configure({ mode: 'serial' });
@@ -103,7 +107,6 @@ for (const testCase of unauthorizedMutationCases) {
       'Read unauthorized error response',
       async () => (await response.json()) as unknown,
     );
-
     expectApiErrorBodyContract(body);
   });
 }
@@ -135,9 +138,9 @@ for (const testCase of invalidCreateMythologyCases) {
 
       const body = await test.step(
         `Read invalid create response: ${testCase.name}`,
-        async () => (await response.json()) as unknown,
+        async () => (await response.json()) as ApiErrorBody,
       );
-
+      expectHTTPError(body, "Ошибка: не заполнены name или category")
       expectApiErrorBodyContract(body);
     },
   );
@@ -179,9 +182,9 @@ for (const testCase of invalidCreateMythologyCases) {
 
     const body = await test.step(
       'Read incomplete put response',
-      async () => (await response.json()) as unknown,
+      async () => (await response.json()) as ApiErrorBody,
     );
-
+    expectHTTPError(body, "Ошибка: Переданы не все обязательные поля");
     expectApiErrorBodyContract(body);
   },
 );
@@ -216,9 +219,9 @@ test(
 
     const body = await test.step(
       'Read empty patch response',
-      async () => (await response.json()) as unknown,
+      async () => (await response.json()) as ApiErrorBody,
     );
-
+    expectHTTPError(body, "Ошибка: Пустое тело запроса");
     expectApiErrorBodyContract(body);
   },
 );
@@ -289,9 +292,9 @@ for (const systemEntityId of protectedSystemEntityIds) {
 
       const body = await test.step(
         `Read protected entity replace response for ${systemEntityId}`,
-        async () => (await response.json()) as unknown,
+        async () => (await response.json()) as ApiErrorBody,
       );
-
+      expectHTTPError(body, "Системная блокировка (ID 1-31)");
       expectApiErrorBodyContract(body);
     },
   );
