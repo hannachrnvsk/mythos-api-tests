@@ -1,12 +1,12 @@
 import {
-  createMythologyEntity,
-  createMythologyEntityWithoutAuth,
-  deleteMythologyEntity,
-  deleteMythologyEntityWithoutAuth,
-  patchMythologyEntity,
-  patchMythologyEntityWithoutAuth,
-  replaceMythologyEntity,
-  replaceMythologyEntityWithoutAuth,
+    createMythologyEntity,
+    createMythologyEntityWithoutAuth,
+    deleteMythologyEntity,
+    deleteMythologyEntityWithoutAuth,
+    patchMythologyEntity,
+    patchMythologyEntityWithoutAuth, postMythologyEntity,
+    replaceMythologyEntity,
+    replaceMythologyEntityWithoutAuth,
 } from '../../src/api/mythology';
 import { expect, test } from '../fixtures/api-test';
 import {
@@ -16,8 +16,9 @@ import {
   protectedSystemEntityIds,
 } from '../support/mythology-test-data';
 import {
-  expectApiErrorBodyContract,
-  expectJsonContentType,
+    ApiErrorBody,
+    expectApiErrorBodyContract, expectHTTPError,
+    expectJsonContentType,
 } from '../support/contract-assertions';
 
 test.describe.configure({ mode: 'serial' });
@@ -103,7 +104,6 @@ for (const testCase of unauthorizedMutationCases) {
       'Read unauthorized error response',
       async () => (await response.json()) as unknown,
     );
-
     expectApiErrorBodyContract(body);
   });
 }
@@ -135,9 +135,9 @@ for (const testCase of invalidCreateMythologyCases) {
 
       const body = await test.step(
         `Read invalid create response: ${testCase.name}`,
-        async () => (await response.json()) as unknown,
+        async () => (await response.json()) as ApiErrorBody,
       );
-
+      expectHTTPError(body, "Ошибка: не заполнены name или category")
       expectApiErrorBodyContract(body);
     },
   );
@@ -179,9 +179,9 @@ for (const testCase of invalidCreateMythologyCases) {
 
     const body = await test.step(
       'Read incomplete put response',
-      async () => (await response.json()) as unknown,
+      async () => (await response.json()) as ApiErrorBody,
     );
-
+    expectHTTPError(body, "Ошибка: Переданы не все обязательные поля");
     expectApiErrorBodyContract(body);
   },
 );
@@ -216,11 +216,48 @@ test(
 
     const body = await test.step(
       'Read empty patch response',
-      async () => (await response.json()) as unknown,
+      async () => (await response.json()) as ApiErrorBody,
     );
-
+    expectHTTPError(body, "Ошибка: Пустое тело запроса");
     expectApiErrorBodyContract(body);
   },
+);
+
+test(
+    'POST /mythology/{id} returns 405 Method Not Allowed',
+    { tag: '@negative' },
+    async ({ request, authToken, debugApiCall, mythologyEntityManager }) => {
+        const createdEntity = await test.step('Create entity for not allowed method', async () =>
+            mythologyEntityManager.create(),
+        );
+
+        const response = await test.step('Send not existing POST request', async () =>
+            debugApiCall(
+                {
+                    label: `Send not existing POST request for mythology entity ${createdEntity.id}`,
+                    request: {
+                        method: 'POST',
+                        url: `mythology/${createdEntity.id}`,
+                        headers: {
+                            Authorization: `Bearer ${authToken}`,
+                        },
+                        body: {},
+                    },
+                },
+                () => postMythologyEntity(request, authToken, createdEntity.id, {}),
+            ),
+        );
+
+        expect(response.status()).toBe(405);
+        expectJsonContentType(response);
+
+        const body = await test.step(
+            'Returns 405 Method Not Allowed',
+            async () => (await response.json()) as unknown,
+        );
+
+        expectApiErrorBodyContract(body);
+    },
 );
 
 for (const systemEntityId of protectedSystemEntityIds) {
@@ -252,9 +289,9 @@ for (const systemEntityId of protectedSystemEntityIds) {
 
       const body = await test.step(
         `Read protected entity replace response for ${systemEntityId}`,
-        async () => (await response.json()) as unknown,
+        async () => (await response.json()) as ApiErrorBody,
       );
-
+      expectHTTPError(body, "Системная блокировка (ID 1-31)");
       expectApiErrorBodyContract(body);
     },
   );

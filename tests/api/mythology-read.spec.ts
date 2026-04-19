@@ -5,10 +5,11 @@ import {
   notFoundMythologyEntityId,
 } from '../support/mythology-test-data';
 import {
-  expectApiErrorBodyContract,
-  expectJsonContentType,
-  expectMythologyEntityContract,
-  expectMythologyEntityListContract,
+    ApiErrorBody,
+    expectApiErrorBodyContract, expectHTTPError,
+    expectJsonContentType,
+    expectMythologyEntityContract,
+    expectMythologyEntityListContract,
 } from '../support/contract-assertions';
 
 test(
@@ -211,9 +212,10 @@ test('GET /mythology/{id} returns 404 for a non-existent entity', { tag: '@read'
   expectJsonContentType(response);
 
   const body = await test.step(
-    'Read non-existent mythology entity response',
-    async () => (await response.json()) as unknown,
-  );
+        'Read non-existent mythology entity response',
+        async () => (await response.json()) as ApiErrorBody,
+    );
+  expectHTTPError(body,  "Персонаж не найден");
 
   expectApiErrorBodyContract(body);
 });

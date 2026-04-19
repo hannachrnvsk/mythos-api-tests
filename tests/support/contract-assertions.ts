@@ -6,7 +6,7 @@ import {
 } from '../../src/api/auth';
 import { type MythologyEntity } from '../../src/api/mythology';
 
-type ApiErrorBody = {
+export type ApiErrorBody = {
   error?: string;
   message?: string;
   success?: boolean;
@@ -19,6 +19,10 @@ function expectNonEmptyString(value: unknown): asserts value is string {
 
 export function expectJsonContentType(response: APIResponse): void {
   expect(response.headers()['content-type']).toContain('application/json');
+}
+
+export function expectHTTPError(body: ApiErrorBody, text: string){
+  expect(body.error).toEqual(text);
 }
 
 export function expectMythologyEntityContract(
