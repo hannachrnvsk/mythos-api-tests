@@ -219,3 +219,40 @@ test('GET /mythology/{id} returns 404 for a non-existent entity', { tag: '@read'
 
   expectApiErrorBodyContract(body);
 });
+
+test(
+    'GET /mythology returns successful JSON response- category-sort',
+    { tag: ['@read'] },
+    async ({ request, debugApiCall }) => {
+        const response = await test.step('Fetch mythology list - specific category sorted', async () =>
+            debugApiCall(
+                {
+                    label: 'Fetch mythology list',
+                    request: {
+                        method: 'GET',
+                        url: 'mythology',
+                    },
+                },
+                () => getMythologyList(request, {category: "gods", sort: "desc"}),
+            ),
+        );
+
+        await expect(response).toBeOK();
+        expectJsonContentType(response);
+
+        const body = await test.step(
+            'Read mythology list response',
+            async () => (await response.json()) as MythologyEntity[],
+        );
+
+        expectMythologyEntityListContract(body);
+        expect(body.length).toBeGreaterThan(0);
+        for (const entity of body) {
+            expect(entity.category).toBe("gods");
+        }
+        const sortedGods = [...body].sort((curr, next) =>
+            next.name.localeCompare(curr.name, 'ru')
+        );
+        expect(body).toEqual(sortedGods);
+    },
+);

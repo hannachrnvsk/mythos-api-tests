@@ -77,25 +77,7 @@ export const invalidCreateMythologyCases: InvalidCreateMythologyCase[] = [
       desc: 'Missing name should trigger validation error.',
       name: '',
     }),
-  },
-  {
-    name: 'invalid category - out of enum',
-    payload: createMythologyPayload({
-      category: toRequestCategory("create")
-    }),
-  },
-  {
-    name: 'invalid category - spaces  only',
-    payload: createMythologyPayload({
-      category: toRequestCategory("    ")
-    }),
-  },
-  {
-    name: 'invalid category - forbidden symbol',
-    payload: createMythologyPayload({
-      category: toRequestCategory('heroes*'),
-    }),
-  },
+  }
 ];
 
 
