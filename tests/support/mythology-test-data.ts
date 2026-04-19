@@ -1,4 +1,4 @@
-import type {
+import {
   CreateMythologyPayload,
   MythologyCategory,
   MythologyEntity,
@@ -7,6 +7,11 @@ import type {
 } from '../../src/api/mythology';
 
 type InvalidCreateMythologyCase = {
+  name: string;
+  payload: CreateMythologyPayload;
+};
+
+type InvalidUpdateMythologyCase = {
   name: string;
   payload: CreateMythologyPayload;
 };
@@ -57,10 +62,13 @@ export const createPatchMythologyPayload = (
 
 export const createIncompletePutPayload = (
   entity: MythologyEntity,
-): Pick<CreateMythologyPayload, 'name' | 'category'> => ({
-  name: entity.name,
-  category: toRequestCategory(entity.category),
-});
+  overrides: Partial<CreateMythologyPayload>
+): Pick<CreateMythologyPayload, 'name' | 'category' | 'desc'> => ({
+    name: entity.name,
+        category: toRequestCategory(entity.category),
+      desc: "Some default description",
+  ...overrides,
+  });
 
 export const invalidCreateMythologyCases: InvalidCreateMythologyCase[] = [
   {
@@ -68,6 +76,46 @@ export const invalidCreateMythologyCases: InvalidCreateMythologyCase[] = [
     payload: createMythologyPayload({
       desc: 'Missing name should trigger validation error.',
       name: '',
+    }),
+  },
+  {
+    name: 'invalid category - out of enum',
+    payload: createMythologyPayload({
+      category: toRequestCategory("create")
+    }),
+  },
+  {
+    name: 'invalid category - spaces  only',
+    payload: createMythologyPayload({
+      category: toRequestCategory("    ")
+    }),
+  },
+  {
+    name: 'invalid category - forbidden symbol',
+    payload: createMythologyPayload({
+      category: toRequestCategory('heroes*'),
+    }),
+  },
+];
+
+
+export const invalidUpdateMythologyCases: InvalidUpdateMythologyCase[] = [
+  {
+    name: 'empty name',
+    payload: createReplacementMythologyPayload({
+      name: '',
+    }),
+  },
+  {
+    name: 'invalid description - empty',
+    payload: createReplacementMythologyPayload({
+      desc: '',
+    }),
+  },
+  {
+    name: 'invalid category - empty',
+    payload: createReplacementMythologyPayload({
+      category: toRequestCategory(''),
     }),
   },
 ];

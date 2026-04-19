@@ -10,10 +10,10 @@ import {
 } from '../../src/api/mythology';
 import { expect, test } from '../fixtures/api-test';
 import {
-  createIncompletePutPayload,
-  createMythologyPayload,
-  invalidCreateMythologyCases,
-  protectedSystemEntityIds,
+    createIncompletePutPayload,
+    createMythologyPayload,
+    invalidCreateMythologyCases, invalidUpdateMythologyCases,
+    protectedSystemEntityIds,
 } from '../support/mythology-test-data';
 import {
     ApiErrorBody,
@@ -137,22 +137,22 @@ for (const testCase of invalidCreateMythologyCases) {
         `Read invalid create response: ${testCase.name}`,
         async () => (await response.json()) as ApiErrorBody,
       );
-      expectHTTPError(body, "Ошибка: не заполнены name или category")
+      expectHTTPError(body, "Поля name и category обязательны.")
       expectApiErrorBodyContract(body);
     },
   );
 }
-
+for (const testCase of invalidUpdateMythologyCases) {
   test(
-  'PUT /mythology/{id} returns 400 when full payload is not provided',
+  `PUT /mythology/{id} returns 400 when full payload is not provided - ${testCase.name}`,
   { tag: '@negative' },
   async ({ request, authToken, debugApiCall, mythologyEntityManager }) => {
     const createdEntity = await test.step('Create entity for incomplete put test', async () =>
       mythologyEntityManager.create(),
     );
 
-    const response = await test.step('Send put request with incomplete payload', async () =>
-      debugApiCall(
+    const response = await test.step(`Submit invalid update payload: - ${testCase.name}`, async () =>
+        debugApiCall(
         {
           label: `Send incomplete put payload for mythology entity ${createdEntity.id}`,
           request: {
@@ -161,12 +161,12 @@ for (const testCase of invalidCreateMythologyCases) {
             headers: {
               Authorization: `Bearer ${authToken}`,
             },
-            body: createIncompletePutPayload(createdEntity),
+            body: createIncompletePutPayload(createdEntity, testCase.payload),
           },
         },
         () =>
           request.put(`mythology/${createdEntity.id}`, {
-            data: createIncompletePutPayload(createdEntity),
+            data: createIncompletePutPayload(createdEntity, testCase.payload),
             headers: {
               Authorization: `Bearer ${authToken}`,
             },
@@ -185,6 +185,7 @@ for (const testCase of invalidCreateMythologyCases) {
     expectApiErrorBodyContract(body);
   },
 );
+}
 
 test(
   'PATCH /mythology/{id} returns 400 for an empty request body',
