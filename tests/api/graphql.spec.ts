@@ -419,3 +419,41 @@ test('GraphQL createSoul, patchSoulDeeds, and banishSoul handle an authenticated
     }
   }
 });
+
+test('createSoul without JWT token', async (
+    {request,debugApiCall }) => {
+    const input = {
+        name: 'Test Soul',
+        weight: 10,
+    };
+    const response = await debugApiCall(createGraphqlMetadata(
+       'createSoul without JWT',
+       {
+           operationName: 'CreateSoul',
+           query: `
+              mutation CreateSoul($input: SoulInput!) {
+                createSoul(input: $input) {
+                  id
+                  name
+                  deeds
+                  status
+                  weight
+              }
+           }
+      `,
+           variables: { input },
+       },
+        undefined,), () =>
+        createSoul(request, '', input),
+    );
+
+    expect(response.status()).toBe(200);
+
+    const body = await response.json();
+
+    expect(body.errors).toBeDefined();
+    expect(Array.isArray(body.errors)).toBe(true);
+    expect(body.errors.length).toBeGreaterThan(0);
+    expect(body.errors[0].message).toBe( "Только авторизованные жрецы могут призывать души!");
+    expect(body.data.createSoul).toBeFalsy();
+});
