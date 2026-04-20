@@ -1,4 +1,5 @@
 import {test, expect} from '@playwright/test';
+import {MythologyCategory} from "../../src/api/mythology";
 
 const resolveApiUrls = (): { apiOrigin: string; loginUrl: string; getMythologyUrl: string } => {
     const configuredBaseUrl = process.env.BASE_URL?.trim() || 'https://api.qasandbox.ru/api/';
@@ -12,6 +13,12 @@ const resolveApiUrls = (): { apiOrigin: string; loginUrl: string; getMythologyUr
         getMythologyUrl: new URL('mythology', normalizedBaseUrl).toString(),
     };
 };
+
+type listHeroes = {
+    id:  number,
+    name: string,
+    category: MythologyCategory,
+}[]
 
 test('Patch the JSON with Mocked Hero', async ({ page }) => {
     const { getMythologyUrl } = resolveApiUrls();
@@ -34,7 +41,7 @@ test('Patch the JSON with Mocked Hero', async ({ page }) => {
     });
 
 
-    const data = await page.evaluate(
+    const data: listHeroes = await page.evaluate(
         async ({ getMythologyUrl }) => {
             const res = await fetch(getMythologyUrl, {
                 method: "GET",
